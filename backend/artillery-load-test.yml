@@ -1,0 +1,119 @@
+config:
+  target: "http://localhost:8000"
+  phases:
+    - duration: 30
+      arrivalRate: 1
+      name: "Smoke test"
+    - duration: 60
+      arrivalRate: 5
+      rampTo: 15
+      name: "Ramp up"
+    - duration: 120
+      arrivalRate: 15
+      name: "Sustained load"
+    - duration: 60
+      arrivalRate: 15
+      rampTo: 5
+      name: "Ramp down"
+  processor: "./artillery-processor.js"
+  http:
+    timeout: 10
+  
+scenarios:
+  - name: "Registration Only - High Load"
+    weight: 50
+    flow:
+      - function: "generateRandomUser"
+      - post:
+          url: "/api/v1/app/auth/signup"
+          headers:
+            Content-Type: "application/json"
+          json:
+            username: "{{ randomUsername }}"
+            password: "{{ randomPassword }}"
+            name: "{{ randomName }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+            - json: "$.userId"
+              as: "userId"
+          expect:
+            - statusCode: 
+                - 200
+                - 201
+                - 400
+                - 409
+          afterResponse: "logRegistration"
+      - think: 1
+      
+  - name: "Login After Registration"
+    weight: 30
+    flow:
+      - function: "generateRandomUser"
+      - post:
+          url: "/api/v1/app/auth/signup"
+          headers:
+            Content-Type: "application/json"
+          json:
+            username: "{{ randomUsername }}"
+            password: "{{ randomPassword }}"
+            name: "{{ randomName }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+          expect:
+            - statusCode:
+                - 200
+                - 201
+                - 400
+                - 409
+      - think: 2
+      - post:
+          url: "/api/v1/app/auth/login"
+          headers:
+            Content-Type: "application/json"
+          json:
+            username: "{{ randomUsername }}"
+            password: "{{ randomPassword }}"
+          expect:
+            - statusCode:
+                - 200
+                - 400
+                - 401
+          afterResponse: "logLogin"
+          
+  - name: "Authentication Flow with Profile Access"
+    weight: 20
+    flow:
+      - function: "generateRandomUser"
+      - post:
+          url: "/api/v1/app/auth/signup"
+          headers:
+            Content-Type: "application/json"
+          json:
+            username: "{{ randomUsername }}"
+            password: "{{ randomPassword }}"
+            name: "{{ randomName }}"
+            email: "{{ randomEmail }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+            - json: "$.userId"
+              as: "userId"
+          expect:
+            - statusCode:
+                - 200
+                - 201
+                - 400
+                - 409
+      - think: 1
+      - function: "setAuthHeader"
+      - get:
+          url: "/api/v1/app/users/profile"
+          headers:
+            Authorization: "{{ authorizationHeader }}"
+          expect:
+            - statusCode:
+                - 200
+                - 401
+                - 404

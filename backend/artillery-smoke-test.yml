@@ -1,0 +1,70 @@
+config:
+  target: "http://localhost:8000"
+  phases:
+    - duration: 30
+      arrivalRate: 5
+      name: "Smoke Test - Quick Validation"
+  processor: "./artillery-processor.js"
+  http:
+    timeout: 10
+
+scenarios:
+  - name: "Smoke Test - Critical Endpoints"
+    flow:
+      # Health Check
+      - get:
+          url: "/api/v1/app/health"
+          expect:
+            - statusCode: 200
+
+      # User Registration
+      - function: "generateRandomUser"
+      - post:
+          url: "/api/v1/app/auth/signup"
+          headers:
+            Content-Type: "application/json"
+          json:
+            username: "{{ randomUsername }}"
+            password: "{{ randomPassword }}"
+            name: "{{ randomName }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+            - json: "$.userId"
+              as: "userId"
+          expect:
+            - statusCode:
+                - 200
+                - 201
+          afterResponse: "logRegistration"
+
+      # User Login
+      - post:
+          url: "/api/v1/app/auth/login"
+          headers:
+            Content-Type: "application/json"
+          json:
+            username: "{{ randomUsername }}"
+            password: "{{ randomPassword }}"
+          capture:
+            - json: "$.token"
+              as: "loginToken"
+          expect:
+            - statusCode: 200
+          afterResponse: "logLogin"
+
+      # Get User Profile
+      - get:
+          url: "/api/v1/app/users/profile"
+          headers:
+            Authorization: "Bearer {{ loginToken }}"
+          expect:
+            - statusCode: 200
+
+      # Logout
+      - post:
+          url: "/api/v1/app/auth/logout"
+          headers:
+            Authorization: "Bearer {{ loginToken }}"
+          expect:
+            - statusCode: 200

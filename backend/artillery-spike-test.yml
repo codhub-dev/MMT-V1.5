@@ -1,0 +1,42 @@
+config:
+  target: "http://localhost:8000"
+  phases:
+    - duration: 30
+      arrivalRate: 5
+      name: "Normal load"
+    - duration: 60
+      arrivalRate: 100
+      name: "SPIKE - Sudden high load"
+    - duration: 30
+      arrivalRate: 5
+      name: "Recovery phase"
+  processor: "./artillery-processor.js"
+  http:
+    timeout: 10
+  
+scenarios:
+  - name: "Spike Test - Registration"
+    weight: 100
+    flow:
+      - function: "generateRandomUser"
+      - post:
+          url: "/api/v1/app/auth/signup"
+          headers:
+            Content-Type: "application/json"
+          json:
+            username: "{{ randomUsername }}"
+            password: "{{ randomPassword }}"
+            name: "{{ randomName }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+          expect:
+            - statusCode: 
+                - 200
+                - 201
+                - 400
+                - 409
+                - 429
+                - 500
+                - 503
+          afterResponse: "logRegistration"

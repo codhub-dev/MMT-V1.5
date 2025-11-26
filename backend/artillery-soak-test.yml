@@ -1,0 +1,111 @@
+config:
+  target: "http://localhost:8000"
+  phases:
+    - duration: 600
+      arrivalRate: 30
+      name: "Soak Test - Sustained Load for 10 minutes"
+  processor: "./artillery-processor.js"
+  http:
+    timeout: 10
+
+scenarios:
+  - name: "Soak Test - Continuous User Activity"
+    weight: 60
+    flow:
+      - function: "generateRandomUser"
+      - post:
+          url: "/api/v1/app/auth/signup"
+          headers:
+            Content-Type: "application/json"
+          json:
+            username: "{{ randomUsername }}"
+            password: "{{ randomPassword }}"
+            name: "{{ randomName }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+            - json: "$.userId"
+              as: "userId"
+          expect:
+            - statusCode:
+                - 200
+                - 201
+                - 400
+                - 409
+      - think: 2
+      - get:
+          url: "/api/v1/app/users/profile"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 
+                - 200
+                - 401
+                - 404
+      - think: 3
+      - post:
+          url: "/api/v1/app/auth/logout"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode:
+                - 200
+                - 401
+                - 404
+
+  - name: "Soak Test - Create and Update Operations"
+    weight: 40
+    flow:
+      - function: "generateRandomUser"
+      - post:
+          url: "/api/v1/app/auth/signup"
+          headers:
+            Content-Type: "application/json"
+          json:
+            username: "{{ randomUsername }}"
+            password: "{{ randomPassword }}"
+            name: "{{ randomName }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+            - json: "$.userId"
+              as: "userId"
+          expect:
+            - statusCode:
+                - 200
+                - 201
+                - 400
+                - 409
+          afterResponse: "logRegistration"
+      - think: 2
+      - get:
+          url: "/api/v1/app/users/profile"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode:
+                - 200
+                - 401
+                - 404
+      - think: 2
+      - post:
+          url: "/api/v1/app/auth/login"
+          headers:
+            Content-Type: "application/json"
+          json:
+            username: "{{ randomUsername }}"
+            password: "{{ randomPassword }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+          expect:
+            - statusCode:
+                - 200
+                - 400
+                - 401
+          afterResponse: "logLogin"
+      - think: 3
+      - get:
+          url: "/api/v1/app/health"
+          expect:
+            - statusCode: 200

@@ -1,0 +1,133 @@
+config:
+  target: "http://localhost:8000"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm up phase"
+    - duration: 120
+      arrivalRate: 10
+      name: "Ramp up load"
+    - duration: 180
+      arrivalRate: 20
+      name: "Sustained load"
+  processor: "./artillery-processor.js"
+  http:
+    timeout: 10
+  
+scenarios:
+  - name: "User Registration - Random Users"
+    weight: 70
+    flow:
+      - function: "generateRandomUser"
+      - post:
+          url: "/api/v1/app/auth/signup"
+          headers:
+            Content-Type: "application/json"
+          json:
+            username: "{{ randomUsername }}"
+            password: "{{ randomPassword }}"
+            name: "{{ randomName }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+            - json: "$.userId"
+              as: "userId"
+          expect:
+            - statusCode: 
+                - 200
+                - 201
+                - 400
+                - 409
+          afterResponse: "logRegistration"
+      - think: 2
+      
+  - name: "Login then Re-authenticate"
+    weight: 20
+    flow:
+      - function: "generateRandomUser"
+      - post:
+          url: "/api/v1/app/auth/signup"
+          headers:
+            Content-Type: "application/json"
+          json:
+            username: "{{ randomUsername }}"
+            password: "{{ randomPassword }}"
+            name: "{{ randomName }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+          expect:
+            - statusCode:
+                - 200
+                - 201
+                - 400
+                - 409
+      - think: 2
+      - post:
+          url: "/api/v1/app/auth/login"
+          headers:
+            Content-Type: "application/json"
+          json:
+            username: "{{ randomUsername }}"
+            password: "{{ randomPassword }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+          expect:
+            - statusCode:
+                - 200
+                - 400
+                - 401
+          afterResponse: "logLogin"
+      
+  - name: "Full User Journey"
+    weight: 10
+    flow:
+      - function: "generateRandomUser"
+      - post:
+          url: "/api/v1/app/auth/signup"
+          headers:
+            Content-Type: "application/json"
+          json:
+            username: "{{ randomUsername }}"
+            password: "{{ randomPassword }}"
+            name: "{{ randomName }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+            - json: "$.userId"
+              as: "userId"
+          expect:
+            - statusCode:
+                - 200
+                - 201
+                - 400
+                - 409
+      - think: 2
+      - get:
+          url: "/api/v1/app/users/profile"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 
+                - 200
+                - 401
+                - 404
+      - think: 3
+      - post:
+          url: "/api/v1/app/auth/logout"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode:
+                - 200
+                - 401
+                - 404
+
+  - name: "Health Check"
+    weight: 5
+    flow:
+      - get:
+          url: "/api/v1/app/health"
+          expect:
+            - statusCode: 200

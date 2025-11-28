@@ -462,10 +462,10 @@ app.get('/api/admin/getAlluser', authenticateToken, async (req, res) => {
   try {
     const users = await User.find().select('-password');
 
-    // Return in old backend format
-    res.json({
-      code: 200,
-      data: users
+    // Return in EXACT old backend format
+    res.status(200).json({
+      message: "All user",
+      users: users
     });
 
   } catch (error) {
@@ -479,28 +479,99 @@ app.get('/api/admin/getAlluser', authenticateToken, async (req, res) => {
 // Admin: Delete test users - Compatible with old backend format
 app.delete('/api/admin/deleteTestUsers', authenticateToken, async (req, res) => {
   try {
-    // Delete users with isTest flag or test email patterns
+    // Check for test users first
+    const testUsers = await User.find({
+      email: { $regex: /^testuser_/i }
+    });
+
+    if (testUsers.length === 0) {
+      logger.info('No test users found to delete');
+      return res.status(200).json({
+        message: "No test users found",
+        deletedCount: 0
+      });
+    }
+
+    // Delete users with email starting with 'testuser_'
     const result = await User.deleteMany({
-      $or: [
-        { isTest: true },
-        { email: /test.*@test\.com/ },
-        { email: /.*\+test@.*/ }
-      ]
+      email: { $regex: /^testuser_/i }
     });
 
     logger.info('Test users deleted', {
       deletedCount: result.deletedCount
     });
 
-    res.json({
-      code: 200,
-      message: 'Test users deleted',
+    // Return in EXACT old backend format
+    res.status(200).json({
+      message: `Successfully deleted ${result.deletedCount} test users`,
       deletedCount: result.deletedCount
     });
 
   } catch (error) {
     logger.error('Delete test users error', {
       error: error.message
+    });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin: Get one user by username - Compatible with old backend format
+app.get('/api/admin/getOneUserByUsername/:username', authenticateToken, async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    const user = await User.findOne({ name: username }).select('-password');
+
+    if (!user) {
+      logger.warn('User not found by username', { username });
+      return res.status(500).json({ error: 'Failed to create user' });
+    }
+
+    logger.info('User found by username', { username, userId: user._id });
+
+    // Return in EXACT old backend format
+    res.status(200).json({
+      message: "User found",
+      user: user
+    });
+
+  } catch (error) {
+    logger.error('Get user by username error', {
+      error: error.message,
+      username: req.params.username
+    });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin: Delete one user by username - Compatible with old backend format
+app.delete('/api/admin/deleteOneUserByUsername/:username', authenticateToken, async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    const user = await User.findOneAndDelete({ name: username });
+
+    if (!user) {
+      logger.warn('User not found for deletion', { username });
+      return res.status(500).json({ error: 'Failed to create user' });
+    }
+
+    logger.info('User deleted by username', {
+      username,
+      userId: user._id,
+      deletedBy: req.user.email
+    });
+
+    // Return in EXACT old backend format
+    res.status(200).json({
+      message: "User found",
+      user: user
+    });
+
+  } catch (error) {
+    logger.error('Delete user by username error', {
+      error: error.message,
+      username: req.params.username
     });
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -530,13 +601,10 @@ app.put('/api/admin/manageSubscription', authenticateToken, async (req, res) => 
       newStatus: user.isSubscribed
     });
 
-    res.json({
-      code: 200,
-      message: 'Subscription updated',
-      data: {
-        userId: user._id,
-        isSubscribed: user.isSubscribed
-      }
+    // Return in EXACT old backend format
+    res.status(200).json({
+      message: `User ${user.isSubscribed ? "subscribed" : "unsubscribed"} successfully`,
+      user: user
     });
 
   } catch (error) {

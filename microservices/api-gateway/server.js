@@ -419,6 +419,8 @@ app.get('/api/v1/app/users/:id', (req, res) => forwardRequest(req, res, breakers
 
 // ADMIN ROUTES - Old format support
 app.get('/api/v1/app/admin/getAlluser', (req, res) => forwardRequest(req, res, breakers.auth, '/api/admin/getAlluser'));
+app.get('/api/v1/app/admin/getOneUserByUsername/:username', (req, res) => forwardRequest(req, res, breakers.auth, `/api/admin/getOneUserByUsername/${req.params.username}`));
+app.delete('/api/v1/app/admin/deleteOneUserByUsername/:username', (req, res) => forwardRequest(req, res, breakers.auth, `/api/admin/deleteOneUserByUsername/${req.params.username}`));
 app.delete('/api/v1/app/admin/deleteTestUsers', (req, res) => forwardRequest(req, res, breakers.auth, '/api/admin/deleteTestUsers'));
 app.put('/api/v1/app/admin/manageSubscription', (req, res) => forwardRequest(req, res, breakers.auth, '/api/admin/manageSubscription'));
 

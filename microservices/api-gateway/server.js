@@ -85,12 +85,12 @@ const authenticateToken = (req, res, next) => {
 
 // Circuit Breaker Options - Very permissive to avoid false positives
 const breakerOptions = {
-  timeout: 10000,           // 10 second timeout
-  errorThresholdPercentage: 90,  // Only trip after 90% errors
-  resetTimeout: 5000,       // Quick 5 second reset
-  rollingCountTimeout: 10000,    // Time window for error calculation
-  rollingCountBuckets: 10,       // Buckets for rolling window
-  volumeThreshold: 20        // Need 20 requests before circuit can trip
+  timeout: 60000,           // 60 second timeout (very lenient)
+  errorThresholdPercentage: 99,  // Almost never trip (99% errors needed)
+  resetTimeout: 30000,      // 30 second reset
+  rollingCountTimeout: 60000,    // Longer time window
+  rollingCountBuckets: 10,
+  volumeThreshold: 100       // Need 100 requests before circuit can trip (effectively disabled)
 };
 
 // Circuit breaker for HTTP requests

@@ -61,8 +61,8 @@ else
     fi
 fi
 
-# Create config maps (if directory exists)
-if [ -d "configmaps" ]; then
+# Create config maps (if directory exists and has files)
+if [ -d "configmaps" ] && [ "$(ls -A configmaps/*.yaml 2>/dev/null)" ]; then
     echo -e "${YELLOW}Creating config maps...${NC}"
     kubectl apply -f configmaps/
 fi

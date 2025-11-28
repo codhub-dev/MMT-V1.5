@@ -45,7 +45,8 @@ spec:
           mountPath: /data/db
       volumes:
       - name: mongodb-storage
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: mongodb-pvc
 ---
 # MongoDB Service
 apiVersion: v1
@@ -113,7 +114,8 @@ spec:
           mountPath: /var/lib/rabbitmq
       volumes:
       - name: rabbitmq-storage
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: rabbitmq-pvc
 ---
 # RabbitMQ Service
 apiVersion: v1

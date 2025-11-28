@@ -22,28 +22,49 @@ spec:
         image: mmt-api-gateway:v2.1.0
         imagePullPolicy: Never
         ports:
-        - containerPort: 3000
+        - containerPort: 5001
           name: http
         env:
         - name: PORT
-          value: "3000"
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: API_GATEWAY_PORT
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
               name: mmt-secrets
               key: jwt-secret
         - name: AUTH_SERVICE_URL
-          value: "http://auth-service:3001"
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: AUTH_SERVICE_URL
         - name: FLEET_SERVICE_URL
-          value: "http://fleet-service:3002"
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: FLEET_SERVICE_URL
         - name: FINANCE_SERVICE_URL
-          value: "http://finance-service:3003"
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: FINANCE_SERVICE_URL
         - name: ANALYTICS_SERVICE_URL
-          value: "http://analytics-service:3004"
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: ANALYTICS_SERVICE_URL
         - name: NOTIFICATION_SERVICE_URL
-          value: "http://notification-service:3005"
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: NOTIFICATION_SERVICE_URL
         - name: NODE_ENV
-          value: "production"
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: NODE_ENV
         resources:
           requests:
             memory: "256Mi"
@@ -54,7 +75,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 3000
+            port: 5001
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 3
@@ -62,7 +83,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /health
-            port: 3000
+            port: 5001
           initialDelaySeconds: 10
           periodSeconds: 5
           timeoutSeconds: 3
@@ -108,14 +129,20 @@ spec:
               name: mmt-secrets
               key: jwt-secret
         - name: JWT_EXPIRY
-          value: "7d"
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: JWT_EXPIRY
         - name: GOOGLE_CLIENT_ID
           valueFrom:
             secretKeyRef:
               name: mmt-secrets
               key: google-client-id
         - name: NODE_ENV
-          value: "production"
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: NODE_ENV
         resources:
           requests:
             memory: "256Mi"
@@ -291,9 +318,15 @@ spec:
               name: mmt-secrets
               key: mongodb-uri-analytics
         - name: FLEET_GRPC_URL
-          value: "fleet-service:50051"
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: FLEET_GRPC_URL
         - name: NODE_ENV
-          value: "production"
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: NODE_ENV
         resources:
           requests:
             memory: "256Mi"

@@ -445,6 +445,9 @@ kubectl rollout status deployment api-gateway -n mmt
 
 ## 📚 Documentation
 
+- **[Setup Guide](SETUP_GUIDE.md)** - Complete step-by-step setup instructions
+- **[Configuration Guide](CONFIGURATION_GUIDE.md)** - Environment & secrets configuration
+- **[Deployment Comparison](DEPLOYMENT_COMPARISON.md)** - Docker vs Kubernetes explained
 - **[Microservices Architecture](microservices/README.md)** - Detailed microservices documentation
 - **[Design Rationale](microservices/docs/DESIGN_RATIONALE.md)** - Architecture decisions
 - **[Deployment Guide](microservices/DEPLOYMENT_GUIDE.md)** - Production deployment

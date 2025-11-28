@@ -36,7 +36,7 @@ if ! kubectl cluster-info &> /dev/null; then
         exit 1
     fi
 
-    minikube start --cpus=4 --memory=8192
+    minikube start --cpus=2 --memory=6144
     echo -e "${GREEN}✓ Minikube started${NC}"
 fi
 

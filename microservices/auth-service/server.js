@@ -125,47 +125,48 @@ app.get('/health', (req, res) => {
   res.status(healthcheck.database === 'connected' ? 200 : 503).json(healthcheck);
 });
 
-// Register new user
+// Register new user - EXACTLY like original backend
 app.post('/api/register', async (req, res) => {
   try {
-    // Validate request
-    const { error, value } = registerSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ error: error.details[0].message });
-    }
+    const { name, email, password } = req.body;
 
-    const { name, email, password, role } = value;
+    if (!email || !password || !name) {
+      return res.status(400).json({ error: 'Name, email and password are required' });
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       logger.warn('Registration attempt with existing email', { email });
-      return res.status(409).json({ error: 'User already exists with this email' });
+      return res.status(409).json({ message: 'Email already exists', code: 409 });
     }
+
+    // Generate a unique googleId for email/password users using email hash
+    const crypto = require('crypto');
+    const googleId = 'email_' + crypto.createHash('sha256').update(email).digest('hex').substring(0, 20);
 
     // Create new user
     const user = new User({
-      name,
-      email,
-      password,
-      role: role || 'user'
+      googleId: googleId,
+      email: email,
+      password: password,
+      name: name,
+      createdAt: new Date(),
     });
 
-    await user.save();
+    const result = await user.save();
 
-    // Generate token
-    const token = generateToken(user);
-
-    logger.info('New user registered', {
-      userId: user._id,
-      email: user.email
-    });
-
-    res.status(201).json({
-      message: 'User registered successfully',
-      token,
-      user: user.toPublicJSON()
-    });
+    if (result !== null) {
+      logger.info('User created successfully', { email, userId: result._id });
+      res.json({
+        code: 200,
+        message: "User created",
+        data: result,
+      });
+    } else {
+      logger.error('Failed to create user', { email });
+      res.status(500).json({ error: 'Failed to create user' });
+    }
 
   } catch (error) {
     logger.error('Registration error', {
@@ -233,77 +234,100 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Google OAuth login
+// Google OAuth login - EXACTLY like original backend
 app.post('/api/google', async (req, res) => {
-  try {
-    const { credential } = req.body;
+  const token = req.headers.authorization?.split(" ")[1];
+  logger.info("Google Sign-In attempt", { hasToken: !!token });
 
-    if (!credential) {
-      return res.status(400).json({ error: 'Google credential required' });
+  try {
+    let payload;
+    if (token && token.split('.').length === 3) {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: token,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      payload = ticket.getPayload();
+      logger.info("Google ID token verified successfully");
+    } else {
+      const response = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${token}`);
+
+      if (!response.ok) {
+        logger.error("Failed to fetch Google user info", { status: response.status, statusText: response.statusText });
+        throw new Error(`Failed to fetch user info: ${response.statusText}`);
+      }
+
+      payload = await response.json();
+      payload.sub = payload.id;
+      logger.info("Google access token verified successfully");
     }
 
-    // Verify Google token
-    const ticket = await googleClient.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID
-    });
+    const userId = payload.sub;
+    const email = payload.email;
+    const picture = payload.picture;
+    const name = payload.name || "User";
 
-    const payload = ticket.getPayload();
-    const { sub: googleId, email, name, picture } = payload;
+    let user = await User.findOne({ googleId: userId });
 
-    // Find or create user
-    let user = await User.findOne({ $or: [{ googleId }, { email }] });
+    const isSubscribed = user ? user.isSubscribed : false;
+    const isAdmin = user ? user.isAdmin : false;
 
-    if (user) {
-      // Update Google ID if user exists but doesn't have it
-      if (!user.googleId) {
-        user.googleId = googleId;
-        await user.save();
-      }
-      await user.updateLastLogin();
-    } else {
-      // Create new user
+    if (!user) {
       user = new User({
-        name,
+        googleId: userId,
         email,
-        googleId,
-        profilePicture: picture,
-        role: 'user'
+        name,
+        isSubscribed,
+        isAdmin,
+        createdAt: new Date(),
       });
       await user.save();
-
-      logger.info('New user registered via Google OAuth', {
-        userId: user._id,
-        email: user.email
-      });
+      logger.info("New user created", { userId, email, name });
+    } else {
+      logger.info("Existing user logged in", { userId, email });
     }
 
-    // Generate token
-    const token = generateToken(user);
+    const jwtToken = jwt.sign(
+      {
+        userId,
+        name,
+        email,
+        picture,
+        isSubscribed,
+        isAdmin
+      },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
-    logger.info('User logged in via Google OAuth', {
-      userId: user._id,
-      email: user.email
+    logger.info("JWT token generated for user", { userId, email });
+
+    res.status(200).json({
+      user: { userId, email, picture, name, isSubscribed, isAdmin },
+      token: jwtToken,
     });
-
-    res.json({
-      message: 'Google authentication successful',
-      token,
-      user: user.toPublicJSON()
-    });
-
   } catch (error) {
-    logger.error('Google OAuth error', {
-      error: error.message,
-      stack: error.stack
-    });
-    res.status(500).json({ error: 'Google authentication failed' });
+    logger.error("Google authentication failed", { error: error.message, stack: error.stack });
+
+    if (error.message.includes('Wrong number of segments')) {
+      res.status(400).json({
+        error: "Invalid token format. Expected ID token or valid access token."
+      });
+    } else if (error.message.includes('Failed to fetch user info')) {
+      res.status(401).json({
+        error: "Invalid or expired access token."
+      });
+    } else {
+      res.status(401).json({
+        error: "Token verification failed.",
+        details: error.message
+      });
+    }
   }
 });
 
 // Validate token (used by API Gateway)
 app.post('/api/validate-token', (req, res) => {
-  const { token } = req.body;
+const { token } = req.body;
 
   if (!token) {
     return res.status(400).json({ error: 'Token required' });
@@ -311,29 +335,46 @@ app.post('/api/validate-token', (req, res) => {
 
   jwt.verify(token, JWT_SECRET, async (err, decoded) => {
     if (err) {
-      return res.status(401).json({ valid: false, error: 'Invalid token' });
+      return res.status(401).json({ message: 'Token expired or invalid' });
     }
 
     try {
-      // Check if user still exists and is active
-      const user = await User.findById(decoded.id);
-      if (!user || !user.isActive) {
-        return res.status(401).json({ valid: false, error: 'User not found or inactive' });
-      }
-
-      res.json({
-        valid: true,
-        user: {
-          id: user._id,
-          email: user.email,
-          role: user.role
-        }
+      // Return decoded token data in exact backend format
+      // Backend returns the full decoded JWT payload as user object
+      res.status(200).json({
+        message: 'User verified',
+        user: decoded
       });
     } catch (error) {
       logger.error('Token validation error', { error: error.message });
-      res.status(500).json({ valid: false, error: 'Validation failed' });
+      res.status(401).json({ message: 'Token expired or invalid' });
     }
   });
+});
+
+// Who am I - EXACTLY like original backend
+app.post('/api/whoami', (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!token) {
+    logger.warn("Whoami request without token");
+    return res.status(400).json({ error: 'Token not found' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    logger.info("User identity verified", { userId: decoded.userId || decoded.id, email: decoded.email });
+
+    res.status(200).json({
+      message: "User verified",
+      user: decoded,
+    });
+  } catch (error) {
+    logger.error("Token verification failed in whoami", { error: error.message });
+    res.status(401).json({
+      message: "Token expired or invalid",
+    });
+  }
 });
 
 // Get user profile (protected)
@@ -410,6 +451,96 @@ app.get('/api/users', authenticateToken, async (req, res) => {
 
   } catch (error) {
     logger.error('Get users error', {
+      error: error.message
+    });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin: Get all users - Compatible with old backend format
+app.get('/api/admin/getAlluser', authenticateToken, async (req, res) => {
+  try {
+    const users = await User.find().select('-password');
+
+    // Return in old backend format
+    res.json({
+      code: 200,
+      data: users
+    });
+
+  } catch (error) {
+    logger.error('Get all users error', {
+      error: error.message
+    });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin: Delete test users - Compatible with old backend format
+app.delete('/api/admin/deleteTestUsers', authenticateToken, async (req, res) => {
+  try {
+    // Delete users with isTest flag or test email patterns
+    const result = await User.deleteMany({
+      $or: [
+        { isTest: true },
+        { email: /test.*@test\.com/ },
+        { email: /.*\+test@.*/ }
+      ]
+    });
+
+    logger.info('Test users deleted', {
+      deletedCount: result.deletedCount
+    });
+
+    res.json({
+      code: 200,
+      message: 'Test users deleted',
+      deletedCount: result.deletedCount
+    });
+
+  } catch (error) {
+    logger.error('Delete test users error', {
+      error: error.message
+    });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin: Manage subscription - Compatible with old backend format
+app.put('/api/admin/manageSubscription', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Toggle subscription status
+    user.isSubscribed = !user.isSubscribed;
+    await user.save();
+
+    logger.info('Subscription status toggled', {
+      userId: user._id,
+      newStatus: user.isSubscribed
+    });
+
+    res.json({
+      code: 200,
+      message: 'Subscription updated',
+      data: {
+        userId: user._id,
+        isSubscribed: user.isSubscribed
+      }
+    });
+
+  } catch (error) {
+    logger.error('Manage subscription error', {
       error: error.message
     });
     res.status(500).json({ error: 'Internal server error' });

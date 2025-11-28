@@ -910,7 +910,7 @@ const ExpenseSummary = () => {
               }}
               options={[
                 { value: null, label: "All Trucks" },
-                ...trucks.map((truck) => ({
+                ...trucks?.map((truck) => ({
                   value: truck._id,
                   label: truck.registrationNo,
                 })),

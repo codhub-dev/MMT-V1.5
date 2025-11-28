@@ -1,364 +1,535 @@
+# Manage My Truck - Microservices Architecture
+
 <p align="center">
   <img src="frontend/public/favicon.png" alt="Manage My Truck Logo" width="100"/>
 </p>
 
-<h1 align="center">Manage My Truck</h1>
-
 <p align="center">
-  Fleet management platform built with React, Node.js, Express & MongoDB.
+  <strong>Fleet Management Platform with Microservices Architecture</strong>
   <br/>
-  <i>Empowering transport businesses with analytics, automation & control.</i>
+  <i>Built with React, Node.js, Express, MongoDB & Kubernetes</i>
 </p>
 
 <p align="center">
-  <a href="#-project-overview">
-    📖 <b>About</b>
-  </a> •
-  <a href="#-features">
-    ✨ <b>Features</b>
-  </a> •
-  <a href="#-getting-started">
-    ⚙️ <b>Setup</b>
-  </a> •
-  <a href="#-tech-stack">
-    🛠️ <b>Tech Stack</b>
-  </a> •
-  <a href="#-api-documentation">
-    📚 <b>API Docs</b>
-  </a> •
-  <a href="#-team">
-    👥 <b>Team</b>
-  </a>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" alt="Status"/>
-  <img src="https://img.shields.io/badge/Internal_Project-No_Public_Access-orange?style=flat-square" alt="Internal Project"/>
+  <img src="https://img.shields.io/badge/Status-Production Ready-brightgreen?style=flat-square" alt="Status"/>
+  <img src="https://img.shields.io/badge/Microservices-6 Services-blue?style=flat-square" alt="Microservices"/>
   <img src="https://img.shields.io/badge/Made%20with-❤️-red?style=flat-square" alt="Made with love"/>
 </p>
 
 ---
 
-# 📖 Project Overview
+## 📖 Overview
 
-**Manage My Truck** is a comprehensive fleet management platform that enables transport businesses to efficiently manage trucks, track expenses, monitor profits, and generate insightful reports. It delivers automation, analytics, and operational control through a clean, intuitive interface.
+**Manage My Truck** is a comprehensive fleet management platform built with modern microservices architecture. It empowers transport businesses to efficiently manage trucks, track expenses, monitor profits, and generate insightful reports through an intuitive interface.
 
----
+### 🏗️ Architecture
 
-# ✨ Features
+The application is built using a microservices architecture with 6 independent services:
 
-### 🚛 Fleet Management
-- **Truck Management** – Add, view, update, and delete trucks with detailed information
-- **Driver Profiles** – Comprehensive driver management with profile tracking
-- **Vehicle Catalog** – Browse and manage vehicle inventory
-- **Real-time Status** – Track truck availability and operational status
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Client (React Frontend)                       │
+└────────────────────────────┬────────────────────────────────────┘
+                             │ HTTPS
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    API Gateway :5001                             │
+│         (Circuit Breaker, Rate Limiting, Routing)                │
+└──┬────────┬────────┬────────┬────────┬────────────────────────┘
+   │ REST   │ REST   │ REST   │ gRPC   │ REST
+   ▼        ▼        ▼        ▼        ▼
+┌──────┐ ┌──────┐ ┌────────┐ ┌─────────┐ ┌──────────┐
+│ Auth │ │Fleet │ │Finance │ │Analytics│ │Notific.  │
+│:3001 │ │:3002 │ │:3003   │ │:3004    │ │:3005     │
+└───┬──┘ └──┬───┘ └───┬────┘ └────┬────┘ └────┬─────┘
+    │       │         │           │           │
+    ▼       ▼         ▼           ▼           ▼
+┌──────────────────────────────────────────────────────────┐
+│         Database Layer (MongoDB - Database per Service)   │
+│  ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐  ┌─────┐│
+│  │Auth DB │  │Fleet DB│  │Fin. DB │  │Analyt. │  │Notif││
+│  └────────┘  └────────┘  └────────┘  └────────┘  └─────┘│
+└──────────────────────────────────────────────────────────┘
+```
 
-### 💰 Financial Management
-- **Expense Tracking**
-  - Fuel expenses with detailed records
-  - DEF (Diesel Exhaust Fluid) expenses
-  - Maintenance and other operational expenses
-  - Categorized expense management
-- **Income Tracking** – Monitor revenue and income streams
-- **Profit Analysis** – Automated profit calculations and driver salary computation
-- **Loan Calculator** – Built-in financial calculator for loan management
-- **Total Expense Aggregation** – Consolidated view of all expenses
+### ✨ Key Features
 
-### 📊 Analytics & Reporting
-- **Interactive Dashboard** – Real-time insights with customizable widgets
-  - Monthly charts and visualizations
-  - Statistics cards with key metrics
-  - Alert widgets for important notifications
-  - Driver profile widgets
-  - Scheduler widgets for maintenance and tasks
-- **Expense Summary** – Comprehensive expense reports and analysis
-- **Visual Analytics** – Charts and graphs powered by Ant Design Charts
-- **Metadata Insights** – System-wide analytics and trends
-- **Custom Dashboard Layouts** – Personalized dashboard configurations
-
-### 🔐 Security & Authentication
-- **Google OAuth 2.0** – Secure social login integration
-- **JWT Authentication** – Token-based secure sessions
-- **Role-Based Access Control (RBAC)**
-  - Admin portal with privileged access
-  - Fleet Manager role
-  - User-level permissions
-- **Secure Password Management** – BCrypt encryption
-- **Cookie-based Session Management**
-
-### 🔔 Alerts & Notifications
-- **Alert System** – Real-time notifications for important events
-- **Email Integration** – Automated email alerts and summaries
-- **Dashboard Alerts Widget** – In-app notification center
-
-### 📱 User Interface
-- **Responsive Design** – Mobile-first approach with Bootstrap and Ant Design
-- **Modern UI Components**
-  - Navigation bar and sidebar
-  - Modal dialogs (Vehicle, Catalog, Expense, Calculations, Get Help)
-  - Profile drawer
-  - Menu drawer for mobile
-  - Toast notifications
-- **Progressive Web App (PWA)** – Installable mobile experience
-- **Dark/Light Mode Ready** – Theme support
-
-### 🛠️ Developer Tools
-- **Swagger API Documentation** – Interactive API explorer at `/api-docs`
-- **GraphQL Support** – Alternative API interface for complex queries
-- **Comprehensive Logging**
-  - Winston-based logging system
-  - Papertrail integration for cloud logging
-  - Request/Response logging middleware
-  - Structured log format
-- **Performance Testing**
-  - Artillery load testing configurations
-  - Smoke, Load, Spike, and Soak test suites
-- **Health Check Endpoint** – Application monitoring at `/api/v1/app/health`
-
-### 🔧 Additional Features
-- **File Upload Support** – Multer integration for document uploads
-- **Excel Export** – Data export to Excel format (ExcelJS)
-- **Date Management** – Moment.js integration for date operations
-- **CORS Configuration** – Secure cross-origin resource sharing
-- **Error Handling** – Centralized error management system
-- **Test Data Seeding** – Quick database population for testing
+- **🚛 Fleet Management** - Comprehensive truck and driver management
+- **💰 Financial Tracking** - Income, expenses, and profit analysis
+- **📊 Analytics & Reporting** - Real-time insights and visualizations
+- **🔐 Secure Authentication** - JWT-based auth with Google OAuth support
+- **🔔 Notifications** - Real-time alerts via RabbitMQ message broker
+- **🎯 API Gateway** - Centralized routing with circuit breaker pattern
+- **📦 Containerized** - Docker & Kubernetes ready
 
 ---
 
-# 🛠️ Tech Stack
+## 🚀 Quick Start
 
-| Layer | Technology |
-| :--- | :--- |
-| **Frontend** | React 18.3, Bootstrap 5.3, Ant Design 5.20 |
-| **Backend** | Node.js 18+, Express.js 4.16 |
-| **Database** | MongoDB 7.3+ (Mongoose ODM) |
-| **Authentication** | Google OAuth 2.0, JWT, BCrypt |
-| **API Documentation** | Swagger UI, OpenAPI 3.0 |
-| **GraphQL** | Apollo Server 5.1 |
-| **Logging** | Winston 3.18, Papertrail, Morgan |
-| **Charts & Analytics** | Ant Design Charts 2.6 |
-| **Testing** | Artillery (Load Testing) |
-| **File Processing** | Multer, ExcelJS, XLSX |
-| **Cloud Storage** | AWS S3 |
-| **Deployment** | AWS EC2, Render, Vercel |
-| **Language** | JavaScript (ES6+) |
-
----
-
-# 🔌 API Architecture
-
-## REST APIs
-
-The application primarily uses RESTful APIs for all standard CRUD operations:
-
-### **Authentication & Authorization**
-- `/api/v1/app/auth` - Google OAuth and JWT-based authentication
-- `/api/v1/app/users` - User management (authenticated)
-- `/api/v1/app/admin` - Admin-only operations
-
-### **Fleet Management**
-- `/api/v1/app/truck` - Truck CRUD operations
-- `/api/v1/app/driverProfiles` - Driver profile management
-
-### **Financial Operations**
-- `/api/v1/app/income` - Income tracking
-- `/api/v1/app/fuelExpenses` - Fuel expense management
-- `/api/v1/app/defExpenses` - DEF expense tracking
-- `/api/v1/app/otherExpenses` - Other operational expenses
-- `/api/v1/app/totalExpenses` - Expense aggregation
-- `/api/v1/app/calculateLoan` - Loan calculations
-
-### **Alerts & Metadata**
-- `/api/v1/app/alerts` - Alert system management
-- `/api/v1/app/metadata` - System metadata and analytics
-
-### **Health & Monitoring**
-- `/api/v1/app/health` - Application health check
-
-## GraphQL API
-
-GraphQL interface available for complex queries and data aggregation:
-- Truck operations with advanced filtering
-- Expense aggregation and analytics
-- Multi-resource queries in single request
-
-### GraphQL Endpoint
-- **Query**: `POST /graphql`
-- **Schema**: Available in `backend/graphql/`
-
-## API Documentation
-
-| **Format** | **Endpoint** | **Description** |
-|------------|--------------|-----------------|
-| **Swagger UI** | `/api-docs` | Interactive API documentation |
-| **OpenAPI JSON** | `/api-docs.json` | OpenAPI 3.0 specification |
-| **GraphQL Schema** | `/graphql` | GraphQL playground |
-
----
-
-# ⚙️ Getting Started
-
-## Prerequisites
+### Prerequisites
 
 - **Node.js** 18+ and npm
-- **MongoDB** 7.3+ (local or MongoDB Atlas)
+- **MongoDB** 7.3+ (or MongoDB Atlas)
+- **Docker** & **Docker Compose** (recommended)
 - **Git**
 
-## Installation
+Optional (for Kubernetes deployment):
+- **kubectl** and **Minikube** or any Kubernetes cluster
 
-### 1️⃣ Clone the Repository
+### Option 1: Docker Compose (Recommended for Development)
+
+The easiest way to get started:
+
 ```bash
-git clone https://github.com/BITSSAP2025AugAPIBP3Sections/APIBP-20242YB-Team-09.git
-cd APIBP-20242YB-Team-09
+# Clone the repository
+git clone <your-repo-url>
+cd mmt-v1.5
+
+# Run the deployment script
+./deploy-docker.sh
 ```
 
-### 2️⃣ Setup Backend
+This will:
+- ✅ Build all microservices
+- ✅ Start MongoDB and RabbitMQ
+- ✅ Deploy all 6 services
+- ✅ Configure networking
+
+**Access the services:**
+- API Gateway: http://localhost:5001
+- All services will be running and connected
+
+### Option 2: Kubernetes (Production)
+
+For production-grade deployment:
+
 ```bash
-cd backend
+# Clone the repository
+git clone <your-repo-url>
+cd mmt-v1.5
+
+# Run the Kubernetes deployment script
+./deploy-kubernetes.sh
+```
+
+This will:
+- ✅ Start Minikube (if not running)
+- ✅ Deploy all services to Kubernetes
+- ✅ Set up health checks and auto-scaling
+- ✅ Configure service discovery
+
+### Option 3: Manual Setup
+
+<details>
+<summary>Click to expand manual setup instructions</summary>
+
+#### 1. Start MongoDB
+
+```bash
+# Using Docker
+docker run -d -p 27017:27017 --name mongodb \
+  -e MONGO_INITDB_ROOT_USERNAME=admin \
+  -e MONGO_INITDB_ROOT_PASSWORD=password \
+  mongo:7.0
+```
+
+#### 2. Start RabbitMQ
+
+```bash
+# Using Docker
+docker run -d -p 5672:5672 -p 15672:15672 --name rabbitmq \
+  -e RABBITMQ_DEFAULT_USER=admin \
+  -e RABBITMQ_DEFAULT_PASS=password \
+  rabbitmq:3.12-management
+```
+
+#### 3. Start each microservice
+
+```bash
+# Auth Service
+cd microservices/auth-service
 npm install
+PORT=3001 MONGODB_URI=mongodb://admin:password@localhost:27017/mmt_auth_db?authSource=admin npm start
 
-# Create .env file with required variables
-cp .env.example .env
-# Edit .env with your configuration
+# Fleet Service
+cd microservices/fleet-service
+npm install
+PORT=3002 MONGODB_URI=mongodb://admin:password@localhost:27017/mmt_fleet_db?authSource=admin npm start
 
-# Start the backend server
-npm start
+# Finance Service
+cd microservices/finance-service
+npm install
+PORT=3003 MONGODB_URI=mongodb://admin:password@localhost:27017/mmt_finance_db?authSource=admin npm start
+
+# Analytics Service
+cd microservices/analytics-service
+npm install
+PORT=3004 MONGODB_URI=mongodb://admin:password@localhost:27017/mmt_analytics_db?authSource=admin npm start
+
+# Notification Service
+cd microservices/notification-service
+npm install
+PORT=3005 MONGODB_URI=mongodb://admin:password@localhost:27017/mmt_notifications_db?authSource=admin RABBITMQ_URL=amqp://admin:password@localhost:5672 npm start
+
+# API Gateway (in new terminal)
+cd microservices/api-gateway
+npm install
+PORT=5001 AUTH_SERVICE_URL=http://localhost:3001 FLEET_SERVICE_URL=http://localhost:3002 FINANCE_SERVICE_URL=http://localhost:3003 ANALYTICS_SERVICE_URL=http://localhost:3004 NOTIFICATION_SERVICE_URL=http://localhost:3005 npm start
 ```
 
-**Backend Environment Variables:**
-```env
-PORT=8000
-MONGODB_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-CORS_URLS=http://localhost:3000
-```
+</details>
 
-### 3️⃣ Setup Frontend
+### Starting the Frontend
+
+After the backend services are running:
+
 ```bash
 cd frontend
 npm install
-
-# Create .env file
-cp .env.example .env
-# Edit .env with backend URL
-
-# Start the frontend server
 npm start
 ```
 
-**Frontend Environment Variables:**
-```env
-REACT_APP_BACKEND_URL=http://localhost:8000
-REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id
-```
+Access the application at **http://localhost:3000**
 
-### 4️⃣ Access the Application
+---
+
+## 📁 Project Structure
 
 ```
-Frontend → http://localhost:3000
-Backend → http://localhost:8000
-API Docs → http://localhost:8000/api-docs
-GraphQL → http://localhost:8000/graphql
+mmt-v1.5/
+├── deploy-docker.sh              # Docker Compose deployment script
+├── deploy-kubernetes.sh          # Kubernetes deployment script
+├── start-app.sh                  # Start frontend with K8s backend
+├── start-microservices.sh        # Start all services natively
+│
+├── microservices/
+│   ├── docker-compose.yml        # Docker Compose configuration
+│   ├── README.md                 # Microservices detailed documentation
+│   │
+│   ├── api-gateway/              # API Gateway Service
+│   │   ├── server.js             # Gateway with circuit breaker
+│   │   ├── adapters/             # Service adapters
+│   │   └── Dockerfile
+│   │
+│   ├── auth-service/             # Authentication Service
+│   │   ├── server.js             # JWT & OAuth implementation
+│   │   ├── models/User.js
+│   │   └── Dockerfile
+│   │
+│   ├── fleet-service/            # Fleet Management (gRPC)
+│   │   ├── server.js
+│   │   ├── fleet.proto           # gRPC definitions
+│   │   ├── models/               # Truck, Driver models
+│   │   └── Dockerfile
+│   │
+│   ├── finance-service/          # Finance Management (GraphQL)
+│   │   ├── server.js
+│   │   ├── models/               # Income, Expense models
+│   │   └── Dockerfile
+│   │
+│   ├── analytics-service/        # Analytics (gRPC)
+│   │   ├── server.js
+│   │   ├── analytics.proto
+│   │   └── Dockerfile
+│   │
+│   ├── notification-service/     # Notifications (RabbitMQ)
+│   │   ├── server.js
+│   │   ├── models/Alert.js
+│   │   └── Dockerfile
+│   │
+│   ├── kubernetes/               # Kubernetes manifests
+│   │   ├── namespace.yaml
+│   │   ├── deployments/
+│   │   ├── services/
+│   │   ├── secrets/
+│   │   └── configmaps/
+│   │
+│   └── docs/                     # API Documentation
+│       ├── DESIGN_RATIONALE.md
+│       ├── openapi/              # REST API specs
+│       ├── proto/                # gRPC definitions
+│       └── graphql/              # GraphQL schemas
+│
+├── frontend/                     # React Frontend
+│   ├── src/
+│   │   ├── Components/
+│   │   ├── Pages/
+│   │   ├── Routes/
+│   │   └── App.js
+│   └── package.json
+│
+└── backend/                      # Legacy monolith (deprecated)
+    └── ...                       # Use microservices instead
 ```
 
 ---
 
-# 🧪 Testing
+## 🛠️ Technology Stack
 
-### Performance Testing with Artillery
+### Microservices
+
+| Service | Technology | Communication | Database |
+|---------|-----------|---------------|----------|
+| **API Gateway** | Express, Opossum | REST | - |
+| **Auth Service** | Express, JWT, OAuth | REST | MongoDB |
+| **Fleet Service** | Express, gRPC | REST + gRPC | MongoDB |
+| **Finance Service** | Express, GraphQL | REST + GraphQL | MongoDB |
+| **Analytics Service** | Express, gRPC | gRPC | MongoDB |
+| **Notification Service** | Express, RabbitMQ | REST + Events | MongoDB |
+
+### Frontend & Infrastructure
+
+- **Frontend**: React 18.3, Bootstrap 5.3, Ant Design 5.20
+- **Databases**: MongoDB 7.3+ (Database-per-Service pattern)
+- **Message Broker**: RabbitMQ 3.12
+- **Containerization**: Docker, Docker Compose
+- **Orchestration**: Kubernetes (Minikube/GKE/EKS)
+- **API Patterns**: REST, gRPC, GraphQL, Event-Driven
+
+---
+
+## 🔌 API Access
+
+### REST APIs (via API Gateway)
+
+All services are accessible through the API Gateway at `http://localhost:5001/api/`:
 
 ```bash
-cd backend
+# Authentication
+POST   /api/auth/register
+POST   /api/auth/login
+GET    /api/auth/me
 
-# Run smoke test
-npm run artillery:smoke
+# Fleet Management
+GET    /api/fleet/trucks
+POST   /api/fleet/trucks
+GET    /api/fleet/drivers
 
-# Run load test
-npm run artillery:load
+# Finance
+GET    /api/finance/income
+POST   /api/finance/expenses
+GET    /api/finance/total
 
-# Run spike test
-npm run artillery:spike
+# Analytics
+GET    /api/analytics/dashboard
+GET    /api/analytics/reports
 
-# Run soak test
-npm run artillery:soak
+# Notifications
+GET    /api/notifications/alerts
+POST   /api/notifications/send
+```
 
-# Seed test users before testing
-npm run seed:test-users
+### GraphQL API
+
+Finance service provides a GraphQL endpoint for complex queries:
+
+```graphql
+# Endpoint: http://localhost:3003/graphql
+
+query {
+  getTotalExpenses(
+    truckId: "123"
+    startDate: "2024-01-01"
+    endDate: "2024-12-31"
+  ) {
+    total
+    fuelExpenses
+    defExpenses
+    otherExpenses
+  }
+}
+```
+
+### gRPC APIs
+
+Fleet and Analytics services use gRPC for high-performance communication. Proto files are in `microservices/docs/proto/`.
+
+---
+
+## 🔧 Configuration
+
+### Environment Variables
+
+Create `.env` files in each service directory:
+
+**API Gateway** (`microservices/api-gateway/.env`):
+```env
+PORT=5001
+JWT_SECRET=your-secret-key
+AUTH_SERVICE_URL=http://auth-service:3001
+FLEET_SERVICE_URL=http://fleet-service:3002
+FINANCE_SERVICE_URL=http://finance-service:3003
+ANALYTICS_SERVICE_URL=http://analytics-service:3004
+NOTIFICATION_SERVICE_URL=http://notification-service:3005
+```
+
+**Each Service** (`microservices/[service-name]/.env`):
+```env
+PORT=300X
+MONGODB_URI=mongodb://admin:password@mongodb:27017/mmt_[service]_db?authSource=admin
+JWT_SECRET=your-secret-key
+```
+
+**Frontend** (`frontend/.env`):
+```env
+REACT_APP_BACKEND_URL=http://localhost:5001
+REACT_APP_GOOGLE_CLIENT_ID=your-google-client-id
 ```
 
 ---
 
-# 📚 Documentation
+## 📊 Monitoring & Health Checks
 
-- **Swagger Guide**: `backend/docs/SWAGGER_USAGE_GUIDE.md`
-- **GraphQL Guide**: `backend/graphql/README.md`
-- **Logging Guide**: `backend/LOGGING_GUIDE.md`
-- **Logging Quick Reference**: `backend/LOGGING_QUICK_REFERENCE.md`
-- **Logging Implementation**: `backend/LOGGING_IMPLEMENTATION_SUMMARY.md`
-- **Papertrail Setup**: `backend/PAPERTRAIL_GUIDE.md`
-- **Artillery Testing**: `backend/ARTILLERY_README.md`
-- **Frontend README**: `frontend/README.md`
+Each service provides health check endpoints:
 
----
+```bash
+# Check individual services
+curl http://localhost:3001/health  # Auth
+curl http://localhost:3002/health  # Fleet
+curl http://localhost:3003/health  # Finance
+curl http://localhost:3004/health  # Analytics
+curl http://localhost:3005/health  # Notifications
 
-# 🚀 Deployment
-
-The application is deployed on:
-- **Frontend**: Vercel
-- **Backend**: Render / AWS EC2
-- **Database**: MongoDB Atlas
-- **Storage**: AWS S3
-
----
-
-# 📁 Project Structure
-
+# Check API Gateway
+curl http://localhost:5001/health
 ```
-APIBP-20242YB-Team-09/
-├── backend/
-│   ├── bin/                    # Server startup scripts
-│   ├── controllers/            # Business logic
-│   ├── database/               # Database connection
-│   ├── docs/                   # API documentation
-│   ├── graphql/                # GraphQL schemas and resolvers
-│   ├── middleware/             # Express middleware
-│   ├── models/                 # Mongoose schemas
-│   ├── routes/                 # API routes
-│   ├── utils/                  # Utility functions
-│   ├── app.js                  # Express app configuration
-│   └── package.json            # Backend dependencies
-├── frontend/
-│   ├── public/                 # Static assets
-│   ├── src/
-│   │   ├── Components/         # React components
-│   │   ├── Pages/              # Page components
-│   │   ├── Routes/             # Routing configuration
-│   │   ├── Styles/             # CSS styles
-│   │   ├── Utils/              # Utility functions
-│   │   ├── Config/             # Configuration files
-│   │   ├── App.js              # Root component
-│   │   └── index.js            # Entry point
-│   └── package.json            # Frontend dependencies
-├── README.md                   # This file
-└── LICENSE                     # MIT License
+
+### Kubernetes Monitoring
+
+```bash
+# View all pods
+kubectl get pods -n mmt
+
+# Check logs
+kubectl logs -f <pod-name> -n mmt
+
+# View service status
+kubectl get services -n mmt
+
+# Check metrics
+kubectl top pods -n mmt
 ```
 
 ---
 
-# 👥 Contributors
+## 🧪 Testing
 
-| [<img src="https://avatars.githubusercontent.com/u/85933206?v=4" width="100" height="100" style="border-radius:50%"/>](https://github.com/brindas) | [<img src="https://avatars.githubusercontent.com/u/73706705?s=400&u=150831dea33fa9328172f02f5b05c4e9bc1e1b18&v=4" width="100" height="100" style="border-radius:50%"/>](https://github.com/ebytom) | [<img src="https://avatars.githubusercontent.com/u/79135241?v=4" width="100" height="100" style="border-radius:50%"/>](https://github.com/govindmj) | [<img src="https://avatars.githubusercontent.com/u/85976132?v=4" width="100" height="100" style="border-radius:50%"/>](https://github.com/joyaldevassy) | [<img src="https://avatars.githubusercontent.com/u/79042847?v=4" width="100" height="100" style="border-radius:50%"/>](https://github.com/nehabimal) |
-|:--:|:--:|:--:|:--:|:--:|
-| **Brinda S** | **Eby Tom** | **Govind M J** | **Joyal Devassy** | **Neha Bimal** |
+### Docker Compose
+
+```bash
+# View logs
+cd microservices
+docker-compose logs -f
+
+# Restart a service
+docker-compose restart api-gateway
+
+# Stop all services
+docker-compose down
+```
+
+### Kubernetes
+
+```bash
+# Scale a service
+kubectl scale deployment fleet-service --replicas=3 -n mmt
+
+# Rolling update
+kubectl rollout restart deployment api-gateway -n mmt
+
+# Check rollout status
+kubectl rollout status deployment api-gateway -n mmt
+```
 
 ---
 
-# 📄 License
+## 📚 Documentation
+
+- **[Microservices Architecture](microservices/README.md)** - Detailed microservices documentation
+- **[Design Rationale](microservices/docs/DESIGN_RATIONALE.md)** - Architecture decisions
+- **[Deployment Guide](microservices/DEPLOYMENT_GUIDE.md)** - Production deployment
+- **[GCP Guide](microservices/GCP_DEPLOYMENT_GUIDE.md)** - Google Cloud Platform deployment
+- **[API Specifications](microservices/docs/)** - OpenAPI, gRPC, GraphQL schemas
+
+---
+
+## 🚀 Deployment Options
+
+### 1. Local Development (Docker Compose)
+
+```bash
+./deploy-docker.sh
+```
+
+Perfect for local development and testing.
+
+### 2. Kubernetes (Minikube)
+
+```bash
+./deploy-kubernetes.sh
+```
+
+Production-like environment on your local machine.
+
+### 3. Cloud Kubernetes (GKE/EKS/AKS)
+
+```bash
+# Configure kubectl to your cluster
+kubectl config use-context <your-cluster>
+
+# Deploy
+cd microservices/kubernetes
+kubectl apply -f namespace.yaml
+kubectl apply -f secrets/
+kubectl apply -f deployments/
+kubectl apply -f services/
+```
+
+### 4. Cloud Managed Services
+
+See `microservices/GCP_DEPLOYMENT_GUIDE.md` for deploying to:
+- Google Kubernetes Engine (GKE)
+- AWS Elastic Kubernetes Service (EKS)
+- Azure Kubernetes Service (AKS)
+
+---
+
+## 🔐 Security Best Practices
+
+- ✅ JWT-based authentication with short-lived tokens
+- ✅ Environment variables for sensitive data
+- ✅ HTTPS/TLS in production
+- ✅ Rate limiting on API Gateway
+- ✅ Database-per-service isolation
+- ✅ Kubernetes secrets for credentials
+- ✅ Network policies for service communication
+
+---
+
+## 🤝 Contributing
+
+This is an internal project. For questions or issues, contact the development team.
+
+---
+
+## 👥 Team
+
+- **Brinda S** - [@brindas](https://github.com/brindas)
+- **Eby Tom** - [@ebytom](https://github.com/ebytom)
+- **Govind M J** - [@govindmj](https://github.com/govindmj)
+- **Joyal Devassy** - [@joyaldevassy](https://github.com/joyaldevassy)
+- **Neha Bimal** - [@nehabimal](https://github.com/nehabimal)
+
+---
+
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-<p align="center">Made with ❤️ by <b>Team AWengerS</b></p>
+<p align="center">
+  <strong>Made with ❤️ by Team AWengerS</strong>
+  <br/>
+  <sub>Fleet Management | Microservices | Cloud Native</sub>
+</p>

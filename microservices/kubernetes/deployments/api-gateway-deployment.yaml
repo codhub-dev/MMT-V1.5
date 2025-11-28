@@ -19,8 +19,8 @@ spec:
     spec:
       containers:
       - name: api-gateway
-        image: yourusername/mmt-api-gateway:1.0.0
-        imagePullPolicy: Always
+        image: mmt-api-gateway:v2.1.0
+        imagePullPolicy: Never
         ports:
         - containerPort: 3000
           name: http
@@ -89,8 +89,8 @@ spec:
     spec:
       containers:
       - name: auth-service
-        image: yourusername/mmt-auth-service:1.0.0
-        imagePullPolicy: Always
+        image: mmt-auth-service:1.0.0
+        imagePullPolicy: Never
         ports:
         - containerPort: 3001
           name: http
@@ -157,8 +157,8 @@ spec:
     spec:
       containers:
       - name: fleet-service
-        image: yourusername/mmt-fleet-service:1.0.0
-        imagePullPolicy: Always
+        image: mmt-fleet-service:v2.1.0
+        imagePullPolicy: Never
         ports:
         - containerPort: 3002
           name: http
@@ -217,8 +217,8 @@ spec:
     spec:
       containers:
       - name: finance-service
-        image: yourusername/mmt-finance-service:1.0.0
-        imagePullPolicy: Always
+        image: mmt-finance-service:1.0.0
+        imagePullPolicy: Never
         ports:
         - containerPort: 3003
           name: http
@@ -273,8 +273,8 @@ spec:
     spec:
       containers:
       - name: analytics-service
-        image: yourusername/mmt-analytics-service:1.0.0
-        imagePullPolicy: Always
+        image: mmt-analytics-service:1.0.0
+        imagePullPolicy: Never
         ports:
         - containerPort: 3004
           name: http
@@ -335,8 +335,8 @@ spec:
     spec:
       containers:
       - name: notification-service
-        image: yourusername/mmt-notification-service:1.0.0
-        imagePullPolicy: Always
+        image: mmt-notification-service:v2.1.0
+        imagePullPolicy: Never
         ports:
         - containerPort: 3005
           name: http

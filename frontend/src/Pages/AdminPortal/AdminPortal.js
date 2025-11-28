@@ -47,7 +47,7 @@ export default function AdminPortal() {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
-      const filteredUsers = res.data.users.filter((user) => !user.isAdmin).map((user) => ({ ...user, id: user._id }));
+      const filteredUsers = res.data.users.filter((user) => !user.isAdmin)?.map((user) => ({ ...user, id: user._id }));
       setUsers(filteredUsers);
     } catch (err) {
       message.error("Failed to fetch users");
@@ -85,7 +85,7 @@ export default function AdminPortal() {
         }
       );
       setUsers((prev) =>
-        prev.map((user) =>
+        prev?.map((user) =>
           user.id === userId ? { ...user, isSubscribed: !user.isSubscribed } : user
         )
       );
@@ -287,7 +287,7 @@ export default function AdminPortal() {
       >
         <Table
           bordered
-          dataSource={filteredUsers.map((user) => ({ ...user, key: user.id }))}
+          dataSource={filteredUsers?.map((user) => ({ ...user, key: user.id }))}
           columns={columns}
           loading={loading}
           pagination={{

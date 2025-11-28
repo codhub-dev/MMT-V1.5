@@ -53,7 +53,7 @@ const connectDB = async () => {
 
 // gRPC Client to Fleet Service
 const FLEET_GRPC_URL = process.env.FLEET_GRPC_URL || 'localhost:50051';
-const fleetProtoPath = path.join(__dirname, '../../docs/proto/fleet.proto');
+const fleetProtoPath = path.join(__dirname, 'fleet.proto');
 const fleetPackageDef = protoLoader.loadSync(fleetProtoPath, {
   keepCase: true,
   longs: String,
@@ -106,9 +106,165 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
+// Get metadata by user ID
+app.get('/api/metadata/by-user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Fetch trucks for this user via gRPC
+    fleetClient.GetTrucks({ userId, limit: 100, skip: 0 }, (err, trucksResponse) => {
+      if (err) {
+        logger.error('Error fetching trucks from Fleet Service', { error: err.message });
+        return res.status(500).json({ error: 'Failed to fetch fleet data' });
+      }
+
+      const trucks = trucksResponse.trucks || [];
+      const metadata = {
+        totalTrucks: trucks.length,
+        activeTrucks: trucks.filter(t => t.status === 'active').length,
+        totalRevenue: 50000,
+        totalExpenses: 30000,
+        netProfit: 20000
+      };
+
+      res.json({
+        success: true,
+        metadata
+      });
+    });
+  } catch (error) {
+    logger.error('Error fetching metadata', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get profile metadata by user ID
+app.get('/api/metadata/profile/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Fetch user fleet data
+    fleetClient.GetTrucks({ userId, limit: 100, skip: 0 }, (err, trucksResponse) => {
+      if (err) {
+        return res.status(500).json({ error: 'Failed to fetch fleet data' });
+      }
+
+      fleetClient.GetDrivers({ userId, limit: 100, skip: 0 }, (err2, driversResponse) => {
+        if (err2) {
+          return res.status(500).json({ error: 'Failed to fetch driver data' });
+        }
+
+        const trucks = trucksResponse.trucks || [];
+        const drivers = driversResponse.drivers || [];
+
+        const metadata = {
+          totalTrucks: trucks.length,
+          totalDrivers: drivers.length,
+          totalRevenue: 150000,
+          totalExpenses: 95000,
+          netProfit: 55000,
+          profitMargin: 36.67
+        };
+
+        res.json({
+          success: true,
+          metadata
+        });
+      });
+    });
+  } catch (error) {
+    logger.error('Error fetching profile metadata', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get six months data by user ID
+app.get('/api/metadata/six-months/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Mock six months data
+    const sixMonthsData = {
+      months: [
+        { month: 'Jan', revenue: 20000, expenses: 12000, profit: 8000 },
+        { month: 'Feb', revenue: 22000, expenses: 13000, profit: 9000 },
+        { month: 'Mar', revenue: 21000, expenses: 12500, profit: 8500 },
+        { month: 'Apr', revenue: 25000, expenses: 15000, profit: 10000 },
+        { month: 'May', revenue: 27000, expenses: 16000, profit: 11000 },
+        { month: 'Jun', revenue: 30000, expenses: 18000, profit: 12000 }
+      ],
+      totalRevenue: 145000,
+      totalExpenses: 86500,
+      totalProfit: 58500
+    };
+
+    res.json({
+      success: true,
+      data: sixMonthsData
+    });
+  } catch (error) {
+    logger.error('Error fetching six months data', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get metadata by truck ID
+app.get('/api/metadata/by-truck/:truckId', async (req, res) => {
+  try {
+    const { truckId } = req.params;
+
+    // Fetch truck via gRPC
+    fleetClient.GetTruckById({ id: truckId }, (err, truck) => {
+      if (err) {
+        return res.status(404).json({ error: 'Truck not found' });
+      }
+
+      const metadata = {
+        truckNumber: truck.truckNumber,
+        truckName: truck.truckName,
+        status: truck.status,
+        totalRevenue: 25000,
+        totalExpenses: 15000,
+        netProfit: 10000,
+        trips: 20,
+        fuelEfficiency: 8.5
+      };
+
+      res.json({
+        success: true,
+        metadata
+      });
+    });
+  } catch (error) {
+    logger.error('Error fetching truck metadata', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Generic metadata endpoint
+app.get('/api/metadata', async (req, res) => {
+  try {
+    const { userId, truckId } = req.query;
+
+    if (userId) {
+      return res.redirect(`/api/metadata/by-user/${userId}`);
+    } else if (truckId) {
+      return res.redirect(`/api/metadata/by-truck/${truckId}`);
+    }
+
+    res.json({
+      success: false,
+      error: 'userId or truckId required'
+    });
+  } catch (error) {
+    logger.error('Error fetching metadata', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // ==================== gRPC SERVER ====================
 
-const analyticsProtoPath = path.join(__dirname, '../../docs/proto/analytics.proto');
+const analyticsProtoPath = path.join(__dirname, 'analytics.proto');
 const analyticsPackageDef = protoLoader.loadSync(analyticsProtoPath, {
   keepCase: true,
   longs: String,

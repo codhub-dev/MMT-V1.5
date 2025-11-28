@@ -87,7 +87,7 @@ const DriverProfileWidget = () => {
       });
 
       if (response.data && response.data.success) {
-        setDrivers(drivers.map(d => d._id === driverId ? response.data.data : d));
+        setDrivers(drivers?.map(d => d._id === driverId ? response.data.data : d));
         message.success('Driver profile updated successfully');
         return response.data.data;
       }

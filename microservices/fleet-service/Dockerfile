@@ -6,13 +6,13 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production
-
-# Copy proto files (needed for gRPC)
-COPY ../../docs/proto/fleet.proto /app/proto/fleet.proto
+RUN npm install --production
 
 # Copy application code
 COPY . .
+
+# Create proto directory
+RUN mkdir -p /app/proto
 
 # Expose ports
 EXPOSE 3002

@@ -1,0 +1,2 @@
+{"database":"mmt_auth_db","host":"localhost","level":"info","message":"Auth Service Database Connected","timestamp":"2025-11-28T07:43:19.067Z"}
+{"database":"mmt_auth_db","environment":"development","level":"info","message":"Auth Service running on port 3001","timestamp":"2025-11-28T07:43:19.070Z"}

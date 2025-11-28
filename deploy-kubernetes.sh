@@ -67,13 +67,22 @@ if [ -d "configmaps" ] && [ "$(ls -A configmaps/*.yaml 2>/dev/null)" ]; then
     kubectl apply -f configmaps/
 fi
 
+# Deploy infrastructure first (MongoDB and RabbitMQ)
+echo -e "${YELLOW}Deploying infrastructure (MongoDB & RabbitMQ)...${NC}"
+kubectl apply -f deployments/infrastructure.yaml
+
+# Wait for infrastructure to be ready
+echo -e "${YELLOW}Waiting for infrastructure to be ready...${NC}"
+kubectl wait --for=condition=available --timeout=120s deployment/mongodb deployment/rabbitmq -n mmt || true
+sleep 10
+
 # Deploy services
 echo -e "${YELLOW}Deploying services...${NC}"
 kubectl apply -f services/
 
 # Deploy applications
 echo -e "${YELLOW}Deploying applications...${NC}"
-kubectl apply -f deployments/
+kubectl apply -f deployments/api-gateway-deployment.yaml
 
 # Wait for deployments to be ready
 echo ""
